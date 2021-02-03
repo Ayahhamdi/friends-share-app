@@ -1,0 +1,459 @@
+service: friends-share-app
+
+plugins:
+  - serverless-webpack
+  - serverless-iam-roles-per-function
+  - serverless-reqvalidator-plugin
+  - serverless-aws-documentation
+  - serverless-offline
+  - serverless-dynamodb-local
+  - serverless-plugin-canary-deployments
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'ap-south-1'}
+
+  tracing:
+    lambda: true
+    apiGateway: true
+
+  environment:
+    POSTS_TABLE: Posts.${self:provider.stage}
+    COMMENTS_TABLE: PostComments.${self:provider.stage}
+    CONNECTIONS_TABLE: Connections.${self:provider.stage}
+    POST_ID_INDEX: PostIdIndex
+
+    POSTS_S3_BUCKET: friends-share-posts-${self:provider.stage}
+    SIGNED_URL_EXPIRATION: 300
+    THUMB_S3_BUCKET: friends-share-thumb-${self:provider.stage}
+    AUTH_0_SECRET_ID: Auth0Secret-${self:provider.stage}
+    AUTH_0_SECRET_FIELD: auth0Secret
+
+custom:
+  topicName: postsTopic-${self:provider.stage}
+  serverless-offline:
+    port: 3003
+
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+  models:
+    - name: PostRequest
+      contentType: application/json
+      schema: ${file(models/create-post-request.json)}
+    - name: CommentRequest
+      contentType: application/json
+      schema: ${file(models/create-comment-request.json)}
+
+functions:
+
+  Auth:
+    handler: src/lambda/auth/auth0Authorizer.handler
+
+  GetAllPosts:
+    handler: src/lambda/http/getAllPosts.handler
+    events:
+      - http:
+          method: get
+          path: posts
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+          - s3:PutObject
+        Resource: arn:aws:s3:::${self:provider.environment.POSTS_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+          - s3:Query
+        Resource: "arn:aws:s3:::${self:provider.environment.THUMB_S3_BUCKET}/*"
+
+  GetPostsPerUser:
+    handler: src/lambda/http/getPostsPerUser.handler
+    events:
+      - http:
+          method: get
+          path: posts
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+          - s3:PutObject
+        Resource: arn:aws:s3:::${self:provider.environment.POSTS_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+          - s3:Query
+        Resource: "arn:aws:s3:::${self:provider.environment.THUMB_S3_BUCKET}/*"
+
+  CreatePost:
+    handler: src/lambda/http/createPost.handler
+    events:
+      - http:
+          method: post
+          path: posts
+          cors: true
+          authorizer: Auth
+          request:            
+            schema:              
+              application/json: ${file(models/create-post-request.json)}
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: Live
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}/index/${self:provider.environment.POST_ID_INDEX}
+      - Effect: Allow
+        Action:
+          - dynamodb:Scan
+          - dynamodb:PutItem
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}
+      - Effect: Allow
+        Action:
+          - secretsmanager:GetSecretValue
+        Resource: !Ref Auth0Secret
+      - Effect: Allow
+        Action:
+          - kms:Decrypt
+        Resource: !GetAtt KMSKey.Arn
+  
+  EditPost:
+    handler: src/lambda/http/editPost.handler
+    events:
+      - http:
+          method: patch
+          path: posts/{postId}
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}/index/${self:provider.environment.POST_ID_INDEX}
+
+  DeletePost:
+    handler: src/lambda/http/deletePost.handler
+    events:
+      - http:
+          method: delete
+          path: posts/{postId}
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}/index/${self:provider.environment.POST_ID_INDEX}
+      - Effect: Allow
+        Action:
+          - s3:DeleteObject
+        Resource: arn:aws:s3:::${self:provider.environment.POSTS_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - s3:DeleteObject
+        Resource: "arn:aws:s3:::${self:provider.environment.THUMB_S3_BUCKET}/*"
+
+  GenerateUploadUrl:
+    handler: src/lambda/http/generateUploadUrl.handler
+    events:
+      - http:
+          method: post
+          path: posts/{postId}/attachment
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}/index/${self:provider.environment.POST_ID_INDEX}
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource: arn:aws:s3:::${self:provider.environment.POSTS_S3_BUCKET}/*
+  
+  GetCommentsPerPost:
+    handler: src/lambda/http/getCommentsPerPost.handler
+    events:
+      - http:
+          method: get
+          path: posts/{postId}/comments
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.COMMENTS_TABLE}
+
+  CreateComment:
+    handler: src/lambda/http/createComment.handler
+    events:
+      - http:
+          method: post
+          path: posts/{postId}/comments
+          cors: true
+          authorizer: Auth
+          request:            
+            schema:              
+              application/json: ${file(models/create-comment-request.json)}
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: Live
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.COMMENTS_TABLE}
+
+  DeleteComment:
+    handler: src/lambda/http/deleteComment.handler
+    events:
+      - http:
+          method: delete
+          path: posts/{postId}/comments/{commentId}
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.COMMENTS_TABLE}
+
+  ConnectHandler:
+    handler: src/lambda/websocket/connect.handler
+    events:
+      - websocket:
+          route: $connect
+
+  DisconnectHandler:
+    handler: src/lambda/websocket/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
+
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE,PATCH'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+
+    PostsDynamoDBTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+          - AttributeName: postId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: createdAt
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.POSTS_TABLE}
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.POST_ID_INDEX}
+            KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: postId
+              KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    CommentsDynamoDBTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: postId
+            AttributeType: S
+          - AttributeName: commentId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: postId
+            KeyType: HASH
+          - AttributeName: commentId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.COMMENTS_TABLE}
+    
+    WebSocketConnectionsDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.CONNECTIONS_TABLE}
+    
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
+
+    AttachmentsBucket:
+      Type: AWS::S3::Bucket
+      DependsOn: SNSTopicPolicy
+      Properties:
+        BucketName: ${self:provider.environment.POSTS_S3_BUCKET}
+        NotificationConfiguration:
+          TopicConfigurations:
+            - Event: s3:ObjectCreated:Put
+              Topic: !Ref PostsTopic
+        CorsConfiguration:
+          CorsRules:
+            -
+              AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+    
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyPolicy
+          Version: "2012-10-17"
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.POSTS_S3_BUCKET}/*'
+        Bucket: !Ref AttachmentsBucket
+
+    SNSTopicPolicy:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: "*"
+              Action: sns:Publish
+              Resource:
+                !Ref PostsTopic
+              Condition:
+                ArnLike:
+                  AWS:SourceArn: arn:aws:s3:::${self:provider.environment.POSTS_S3_BUCKET}
+        Topics:
+          - !Ref PostsTopic
+
+    ThumbBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.THUMB_S3_BUCKET}
+
+    PostsTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: Post bucket topic
+        TopicName: ${self:custom.topicName}
+    
+    KMSKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: KMS key to encrypt Auth0 secret
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: key-default-1
+          Statement:
+            - Sid: Allow administration of the key
+              Effect: Allow
+              Principal:
+                AWS:
+                  Fn::Join:
+                  - ':'
+                  - - 'arn:aws:iam:'
+                    - Ref: AWS::AccountId
+                    - 'root'
+              Action:
+                - 'kms:*'
+              Resource: '*'
+
+    KMSKeyAlias:
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: alias/auth0Key-${self:provider.stage}
+        TargetKeyId: !Ref KMSKey
+
+    Auth0Secret:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: ${self:provider.environment.AUTH_0_SECRET_ID}
+        Description: Auth0 secret
+        KmsKeyId: !Ref KMSKey

@@ -1,0 +1,13 @@
+{  
+  "$schema": "http://json-schema.org/draft-07/schema#",  
+  "title": "Create post",  
+  "type": "object",  
+  "properties": {    
+    "postText": {      
+      "type": "string",
+      "minLength": 1    
+    }
+  },  
+  "required": ["postText"],  
+  "additionalProperties": false
+}
