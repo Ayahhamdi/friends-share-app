@@ -9,11 +9,13 @@ import {
   Header,
   Input,
   Image,
-  Loader
+  Loader,
+  ItemGroup,
+  Item,
+  ItemContent
 } from 'semantic-ui-react'
 
 import { createPost, deletePost, notifyPost, getPosts, getPostsPerUser, patchPost } from '../api/posts-api'
-import {getPostComments} from '../api/comments-api'
 import Auth from '../auth/Auth'
 import { Post } from '../types/Post'
 
@@ -52,6 +54,7 @@ export class Posts extends React.PureComponent<PostsProps, PostsState> {
         posts: [...this.state.posts, newPost],
         newPostName: ''
       })
+      
     } catch {
       alert('Post creation failed')
     }
@@ -75,11 +78,6 @@ export class Posts extends React.PureComponent<PostsProps, PostsState> {
 
   onPostComments = async (postId: string) => {
     this.props.history.push(`/posts/${postId}/comments`)
-    /*try {
-      await getPostComments(this.props.auth.getIdToken(), postId)
-    } catch {
-      alert('Post Comments failed')
-    }*/
   }
 
   async componentDidMount() {
@@ -97,7 +95,7 @@ export class Posts extends React.PureComponent<PostsProps, PostsState> {
   render() {
     return (
       <div>
-        <Header as="h1">POSTs .. hi {this.props.auth.getTokenName()}</Header>
+        <Header as="h1">Welcome in Friends share ..</Header>
 
         {this.renderCreatePostInput()}
 
@@ -135,29 +133,36 @@ export class Posts extends React.PureComponent<PostsProps, PostsState> {
     if (this.state.loadingPosts) {
       return this.renderLoading()
     }
-
-    return this.renderPostsList()
+    return this.renderPostsCards()
   }
 
   renderLoading() {
     return (
-      <Grid.Row>
+      <ItemGroup>
         <Loader indeterminate active inline="centered">
           Loading POSTs
         </Loader>
-      </Grid.Row>
+      </ItemGroup>
     )
   }
 
-  renderPostsList() {
+  renderPostsCards() {
     return (
-      <Grid padded>
+      <ItemGroup>
         {this.state.posts.map((post, pos) => {
           return (
-            <Grid.Row key={post.postId}>
-              <Grid.Column width={10} floated="left">
-                {post.postText}
-              </Grid.Column>
+            <Item key={post.postId}>
+              {post.attachmentUrl && (
+                <Image src={post.attachmentUrl} size="large" wrapped ui={false}/>
+              )}
+
+              <Item.Content>
+                <Item.Header as='a'>{post.postText}</Item.Header>
+                <Item.Meta>{post.userId}</Item.Meta>
+                <Item.Description>
+                  {post.createdAt}
+                </Item.Description>
+              </Item.Content>
               <Dropdown>
                 <Dropdown.Menu>
                   <Dropdown.Item text='Add Photo' onClick={() => this.onEditButtonClick(post.postId)}/>
@@ -166,16 +171,10 @@ export class Posts extends React.PureComponent<PostsProps, PostsState> {
                   <Dropdown.Item text='Comments' onClick={() => this.onPostComments(post.postId)} />
                 </Dropdown.Menu>
               </Dropdown>
-              {post.attachmentUrl && (
-                <Image src={post.attachmentUrl} size="large" wrapped />
-              )}
-              <Grid.Column width={16}>
-                <Divider />
-              </Grid.Column>
-            </Grid.Row>
+            </Item>
           )
         })}
-      </Grid>
+      </ItemGroup>
     )
   }
 }

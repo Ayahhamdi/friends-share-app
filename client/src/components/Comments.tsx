@@ -9,13 +9,13 @@ import {
   Header,
   Input,
   Image,
-  Loader
+  Loader,
+  Button, Comment, Form, Placeholder
 } from 'semantic-ui-react'
 
-import { createPost, deletePost, notifyPost, getPosts} from '../api/posts-api'
 import {getPostComments, createComment, deleteComment} from '../api/comments-api'
 import Auth from '../auth/Auth'
-import { Comment } from '../types/Comment'
+import { CommentType } from '../types/CommentType'
 
 interface CommentsProps {
   match: {
@@ -28,7 +28,7 @@ interface CommentsProps {
 
 
 interface CommentsState {
-  comments: Comment[]
+  comments: CommentType[]
   newCommentName: string
   loadingComments: boolean
 }
@@ -41,15 +41,13 @@ export class Comments extends React.PureComponent<CommentsProps, CommentsState> 
   }
 
   handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Change Name: "+ this.state.newCommentName)
     this.setState({ newCommentName: event.target.value })
   }
 
-  /*onEditButtonClick = (postId: string) => {
-    this.props.history.push(`/posts/${postId}/edit`)
-  }
-*/
-  onCommentCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+  onCommentCreate = async (event: React.MouseEvent<HTMLButtonElement>) => {
     try {
+      console.log("Adding Comment : "+ this.state.newCommentName)
       const newComment = await createComment(this.props.auth.getIdToken(), this.props.match.params.postId, {
         commentText: this.state.newCommentName
       })
@@ -78,7 +76,7 @@ export class Comments extends React.PureComponent<CommentsProps, CommentsState> 
         loadingComments: false
       })
     } catch (e) {
-      alert(`Failed to fetch posts: ${e.message}`)
+      alert(`Failed to fetch comments: ${e.message}`)
     }
   }
 
@@ -86,36 +84,8 @@ export class Comments extends React.PureComponent<CommentsProps, CommentsState> 
     return (
       <div>
         <Header as="h1">COMMENTs {this.props.match.params.postId}</Header>
-
-        {this.renderCreateCommentInput()}
-
         {this.renderComments()}
       </div>
-    )
-  }
-
-  renderCreateCommentInput() {
-    return (
-      <Grid.Row>
-        <Grid.Column width={16}>
-          <Input
-            action={{
-              color: 'teal',
-              labelPosition: 'left',
-              icon: 'add',
-              content: 'New Comment',
-              onClick: this.onCommentCreate
-            }}
-            fluid
-            actionPosition="left"
-            placeholder="Write your comment..."
-            onChange={this.handleNameChange}
-          />
-        </Grid.Column>
-        <Grid.Column width={16}>
-          <Divider />
-        </Grid.Column>
-      </Grid.Row>
     )
   }
 
@@ -123,7 +93,6 @@ export class Comments extends React.PureComponent<CommentsProps, CommentsState> 
     if (this.state.loadingComments) {
       return this.renderLoading()
     }
-
     return this.renderCommentsList()
   }
 
@@ -139,31 +108,27 @@ export class Comments extends React.PureComponent<CommentsProps, CommentsState> 
 
   renderCommentsList() {
     return (
-      <Grid padded>
-        {this.state.comments.map((comment, pos) => {
+      <Comment.Group>
+        {this.state.comments.map((commentType, pos) => {
           return (
-            <Grid.Row key={comment.commentId}>
-              <Grid.Column width={10} floated="left">
-                {comment.commentText}
-              </Grid.Column>
-              <Grid.Column width={10} verticalAlign="middle">
-                {comment.createdAt}
-              </Grid.Column>
-              <Grid.Column width={10}>
-                {comment.commentId}
-              </Grid.Column>
-              <Dropdown>
-                <Dropdown.Menu>
-                  <Dropdown.Item text='delete' onClick={() => this.onCommentDelete(comment.postId, comment.commentId)} />
-                </Dropdown.Menu>
-              </Dropdown>
-              <Grid.Column width={16}>
-                <Divider />
-              </Grid.Column>
-            </Grid.Row>
+            <Comment key={commentType.commentId}>
+            <Comment.Avatar src='https://react.semantic-ui.com/images/avatar/small/joe.jpg' />
+            <Comment.Content>
+              <Comment.Author as='a'>{commentType.creatorId}</Comment.Author>
+              <Comment.Metadata>
+                <div>{commentType.createdAt}</div>
+              </Comment.Metadata>
+              <Comment.Text>{commentType.commentText}</Comment.Text>
+            </Comment.Content>
+          </Comment>
           )
         })}
-      </Grid>
+        <Form reply>
+          <Form.Input value = {this.state.newCommentName} onChange={this.handleNameChange}/>
+          <Button content='Add Comment' labelPosition='left' icon='edit' onClick = {this.onCommentCreate} primary />
+        </Form>
+      </Comment.Group>
     )
   }
+
 }

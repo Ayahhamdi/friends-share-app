@@ -1,9 +1,9 @@
 import { apiEndpoint } from '../config'
-import { Comment } from '../types/Comment';
+import { CommentType } from '../types/CommentType';
 import { CreateCommentRequest } from '../types/CreateCommentRequest';
 import Axios from 'axios'
 
-export async function getPostComments(idToken: string, postId: string): Promise<Comment[]> {
+export async function getPostComments(idToken: string, postId: string): Promise<CommentType[]> {
   console.log('Fetching comments per post')
 
   const response = await Axios.get(`${apiEndpoint}/posts/${postId}/comments`, {
@@ -20,7 +20,7 @@ export async function createComment(
   idToken: string,
   postId: string,
   newComment: CreateCommentRequest
-): Promise<Comment> {
+): Promise<CommentType> {
   const response = await Axios.post(`${apiEndpoint}/posts/${postId}/comments`,  JSON.stringify(newComment), {
     headers: {
       'Content-Type': 'application/json',

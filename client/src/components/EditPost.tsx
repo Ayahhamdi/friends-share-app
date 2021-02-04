@@ -73,7 +73,7 @@ export class EditPost extends React.PureComponent<
   render() {
     return (
       <div>
-        <h1>Upload new image</h1>
+        <h1>Add a photo</h1>
 
         <Form onSubmit={this.handleSubmit}>
           <Form.Field>
@@ -81,7 +81,7 @@ export class EditPost extends React.PureComponent<
             <input
               type="file"
               accept="image/*"
-              placeholder="Image to upload"
+              placeholder="Photo to upload"
               onChange={this.handleFileChange}
             />
           </Form.Field>
