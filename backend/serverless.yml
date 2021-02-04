@@ -68,6 +68,7 @@ functions:
         Action:
           - dynamodb:Query
           - dynamodb:GetItem
+          - dynamodb:Scan
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.POSTS_TABLE}
       - Effect: Allow
         Action:
@@ -85,7 +86,7 @@ functions:
     events:
       - http:
           method: get
-          path: posts/{userId}
+          path: posts/my-posts
           cors: true
           authorizer: Auth
     iamRoleStatements:
@@ -110,7 +111,7 @@ functions:
     events:
       - http:
           method: post
-          path: posts
+          path: posts/my-posts
           cors: true
           authorizer: Auth
           request:            
@@ -150,7 +151,7 @@ functions:
     events:
       - http:
           method: patch
-          path: posts/{postId}
+          path: posts/my-posts/{postId}
           cors: true
           authorizer: Auth
     iamRoleStatements:
@@ -169,7 +170,7 @@ functions:
     events:
       - http:
           method: delete
-          path: posts/{postId}
+          path: posts/my-posts/{postId}
           cors: true
           authorizer: Auth
     iamRoleStatements:
@@ -197,7 +198,7 @@ functions:
     events:
       - http:
           method: post
-          path: posts/{postId}/attachment
+          path: posts/my-posts/{postId}/attachment
           cors: true
           authorizer: Auth
     iamRoleStatements:

@@ -105,9 +105,8 @@ export class PostsAccess {
 
     // Get All Posts
     async getAllPosts(): Promise<PostItem[]>{
-        const result = await this.docClient.query({
-            TableName: this.postsTable,
-            ScanIndexForward: false
+        const result = await this.docClient.scan({
+            TableName: this.postsTable
         }).promise()
         
         const items = result.Items

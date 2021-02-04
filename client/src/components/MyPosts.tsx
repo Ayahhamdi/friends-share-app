@@ -15,7 +15,7 @@ import {
   ItemContent
 } from 'semantic-ui-react'
 
-import { getPosts} from '../api/posts-api'
+import { createPost, deletePost, getPostsPerUser, patchPost } from '../api/myposts-api'
 import Auth from '../auth/Auth'
 import { Post } from '../types/Post'
 
@@ -30,11 +30,42 @@ interface PostsState {
   loadingPosts: boolean
 }
 
-export class Posts extends React.PureComponent<PostsProps, PostsState> {
+export class MyPosts extends React.PureComponent<PostsProps, PostsState> {
   state: PostsState = {
     posts: [],
     newPostName: '',
     loadingPosts: true
+  }
+
+  handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ newPostName: event.target.value })
+  }
+
+  onEditButtonClick = (postId: string) => {
+    this.props.history.push(`/posts/my-posts/${postId}/edit`)
+  }
+
+  onPostCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+    try {
+      const newPost = await createPost(this.props.auth.getIdToken(), {
+        postText: this.state.newPostName
+      })
+      this.setState({
+        posts: [...this.state.posts, newPost],
+        newPostName: ''
+      })
+      
+    } catch {
+      alert('Post creation failed')
+    }
+  }
+
+  onPostDelete = async (postId: string) => {
+    try {
+      await deletePost(this.props.auth.getIdToken(), postId)
+    } catch {
+      alert('Post deletion failed')
+    }
   }
 
   onPostComments = async (postId: string) => {
@@ -43,7 +74,7 @@ export class Posts extends React.PureComponent<PostsProps, PostsState> {
 
   async componentDidMount() {
     try {
-      const posts = await getPosts(this.props.auth.getIdToken())
+      const posts = await getPostsPerUser(this.props.auth.getIdToken())
       this.setState({
         posts,
         loadingPosts: false
@@ -56,10 +87,37 @@ export class Posts extends React.PureComponent<PostsProps, PostsState> {
   render() {
     return (
       <div>
-        <Header as="h1">Welcome in Friends share ..</Header>
+        <Header as="h1">My Wall ..</Header>
+
+        {this.renderCreatePostInput()}
 
         {this.renderPosts()}
       </div>
+    )
+  }
+
+  renderCreatePostInput() {
+    return (
+      <Grid.Row>
+        <Grid.Column width={16}>
+          <Input
+            action={{
+              color: 'teal',
+              labelPosition: 'left',
+              icon: 'add',
+              content: 'New Post',
+              onClick: this.onPostCreate
+            }}
+            fluid
+            actionPosition="left"
+            placeholder="What is in your mind..."
+            onChange={this.handleNameChange}
+          />
+        </Grid.Column>
+        <Grid.Column width={16}>
+          <Divider />
+        </Grid.Column>
+      </Grid.Row>
     )
   }
 
@@ -99,6 +157,8 @@ export class Posts extends React.PureComponent<PostsProps, PostsState> {
               </Item.Content>
               <Dropdown>
                 <Dropdown.Menu>
+                  <Dropdown.Item text='Add Photo' onClick={() => this.onEditButtonClick(post.postId)}/>
+                  <Dropdown.Item text='delete Post' onClick={() => this.onPostDelete(post.postId)} />
                   <Dropdown.Item text='View Comments' onClick={() => this.onPostComments(post.postId)} />
                 </Dropdown.Menu>
               </Dropdown>

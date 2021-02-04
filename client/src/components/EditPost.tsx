@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Form, Button } from 'semantic-ui-react'
 import Auth from '../auth/Auth'
-import { getUploadUrl, uploadFile } from '../api/posts-api'
+import { getUploadUrl, uploadFile } from '../api/myposts-api'
 
 enum UploadState {
   NoUpload,

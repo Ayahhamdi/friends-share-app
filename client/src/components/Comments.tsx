@@ -83,7 +83,7 @@ export class Comments extends React.PureComponent<CommentsProps, CommentsState> 
   render() {
     return (
       <div>
-        <Header as="h1">COMMENTs {this.props.match.params.postId}</Header>
+        <Header as="h3">Comments of postNo: {this.props.match.params.postId}</Header>
         {this.renderComments()}
       </div>
     )
@@ -124,7 +124,7 @@ export class Comments extends React.PureComponent<CommentsProps, CommentsState> 
           )
         })}
         <Form reply>
-          <Form.Input value = {this.state.newCommentName} onChange={this.handleNameChange}/>
+          <Form.Input placeholder= "write a reply" value = {this.state.newCommentName} onChange={this.handleNameChange}/>
           <Button content='Add Comment' labelPosition='left' icon='edit' onClick = {this.onCommentCreate} primary />
         </Form>
       </Comment.Group>
