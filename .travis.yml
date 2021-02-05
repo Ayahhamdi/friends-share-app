@@ -12,11 +12,12 @@ install:
 # Scripts to be run such as tests
 before_script:
   - echo "no tests"
+  - cd client
 
 script:
   - docker --version # print the version for logging
-  - docker build -t client/Dockerfile .
-  - docker tag client/Dockerfile ayahhamdi/friendsShare-client:latest
+  - docker build -t client .
+  - docker tag client ayahhamdi/friendsShare-client:latest
 
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
