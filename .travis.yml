@@ -1,0 +1,23 @@
+language: node_js
+node_js:
+  - 12
+
+services:
+  - docker
+
+# Pre-testing installs
+install:
+  - echo "Friends Share app is going to be installing"
+
+# Scripts to be run such as tests
+before_script:
+  - echo "no tests"
+
+script:
+  - docker --version # print the version for logging
+  - docker build -t client/dockerFile.yml .
+  - docker tag client/dockerFile.yml ayahhamdi/friendsShare-client:latest
+
+after_success:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker push ayahhamdi/friendsShare-client
