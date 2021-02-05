@@ -6,13 +6,15 @@ services:
   - docker
 
 # Pre-testing installs
+before_install:
+  - cd client
+  
 install:
   - echo "Friends Share app is going to be installing"
 
 # Scripts to be run such as tests
 before_script:
   - echo "no tests"
-  - ps client
 
 script:
   - docker --version # print the version for logging
