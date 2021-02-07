@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 3000
 
 # Define Docker�s behavior when the image is run
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "build"]
