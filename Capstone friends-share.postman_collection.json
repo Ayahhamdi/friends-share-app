@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "d0700d24-79ec-487e-8403-b565bef7f8e0",
-		"name": "Capstone friends-share",
+		"_postman_id": "8c5a78e3-feeb-407a-8a3f-7f40f475dbba",
+		"name": "Capstone friends-share-local",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -19,10 +19,6 @@
 								"type": "text"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts",
 							"protocol": "https",
@@ -36,6 +32,36 @@
 							"path": [
 								"dev",
 								"posts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Posts per User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/my-posts",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"ap-south-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"posts",
+								"my-posts"
 							]
 						}
 					},
@@ -60,10 +86,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"name\": \"Water flowers\",\n\t\"dueDate\": \"2019-06-11\"\n}"
+							"raw": "{\n\t\"postText\": \"Hi Hamza\"\n}"
 						},
 						"url": {
-							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts",
+							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/my-posts",
 							"protocol": "https",
 							"host": [
 								"{{apiId}}",
@@ -74,7 +100,8 @@
 							],
 							"path": [
 								"dev",
-								"posts"
+								"posts",
+								"my-posts"
 							]
 						}
 					},
@@ -83,7 +110,7 @@
 				{
 					"name": "Edit post",
 					"request": {
-						"method": "PUT",
+						"method": "PATCH",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -99,22 +126,23 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"name\": \"Change the world\",\n\t\"dueDate\": \"2019-12-11\",\n\t\"done\": true\n}"
+							"raw": "{\n\t\"postText\": \"edit post\"\n}"
 						},
 						"url": {
-							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/{{postId}}",
+							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/my-posts/fd971642-ee14-4aaf-8384-82a978fe6eda",
 							"protocol": "https",
 							"host": [
 								"{{apiId}}",
 								"execute-api",
-								"ao-south-1",
+								"ap-south-1",
 								"amazonaws",
 								"com"
 							],
 							"path": [
 								"dev",
 								"posts",
-								"{{postId}}"
+								"my-posts",
+								"fd971642-ee14-4aaf-8384-82a978fe6eda"
 							]
 						}
 					},
@@ -142,7 +170,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/{{postId}}",
+							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/my-posts/9129c471-b1b6-412f-919d-d535a4760a89",
 							"protocol": "https",
 							"host": [
 								"{{apiId}}",
@@ -154,7 +182,8 @@
 							"path": [
 								"dev",
 								"posts",
-								"{{postId}}"
+								"my-posts",
+								"9129c471-b1b6-412f-919d-d535a4760a89"
 							]
 						}
 					},
@@ -171,12 +200,8 @@
 								"type": "text"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
-							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/{{postId}}/attachment",
+							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/my-posts/4860d4d1-3760-491c-9a16-a05e0fd15f47/attachment",
 							"protocol": "https",
 							"host": [
 								"{{apiId}}",
@@ -188,7 +213,8 @@
 							"path": [
 								"dev",
 								"posts",
-								"{{postId}}",
+								"my-posts",
+								"4860d4d1-3760-491c-9a16-a05e0fd15f47",
 								"attachment"
 							]
 						}
@@ -200,7 +226,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "ce2b42d4-8cc5-4f30-a6ed-e7f0f303c3fd",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -210,7 +235,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "efb16c49-3866-4241-97d1-360ad72736d8",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -218,13 +242,201 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "COMMENTS",
+			"item": [
+				{
+					"name": "Get Comments per post",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/513b90fd-2795-48ee-9fb4-3ba4c437e007/comments",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"ap-south-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"posts",
+								"513b90fd-2795-48ee-9fb4-3ba4c437e007",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete comment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/9129c471-b1b6-412f-919d-d535a4760a89/comments/a7ee490f-d2f0-4284-b6fd-e6fb7c59d4ce",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"ap-south-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"posts",
+								"9129c471-b1b6-412f-919d-d535a4760a89",
+								"comments",
+								"a7ee490f-d2f0-4284-b6fd-e6fb7c59d4ce"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"commentText\": \"bring to me lunch\"\n}"
+						},
+						"url": {
+							"raw": "https://{{apiId}}.execute-api.ap-south-1.amazonaws.com/dev/posts/513b90fd-2795-48ee-9fb4-3ba4c437e007/comments",
+							"protocol": "https",
+							"host": [
+								"{{apiId}}",
+								"execute-api",
+								"ap-south-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"dev",
+								"posts",
+								"513b90fd-2795-48ee-9fb4-3ba4c437e007",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
+	"auth": {
+		"type": "oauth2",
+		"oauth2": [
+			{
+				"key": "tokenType",
+				"value": "Bearer",
+				"type": "string"
+			},
+			{
+				"key": "accessToken",
+				"value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InJQa3B2OWQ5XzR0MGxnVjRFRnFBYSJ9.eyJpc3MiOiJodHRwczovL2Rldi1yc25wZGc2di51cy5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NjAxOTc5OWM2NGE5MTAwMDZhMGZiNjI2IiwiYXVkIjpbImh0dHBzOi8vZGV2LXJzbnBkZzZ2LnVzLmF1dGgwLmNvbS9hcGkvdjIvIiwiaHR0cHM6Ly9kZXYtcnNucGRnNnYudXMuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTYxMjcwMTIxMywiZXhwIjoxNjEyNzg3NjEzLCJhenAiOiJPSE83bTNQdVNvd29rZnVNM3RXZUdxajhwRGx4NkVxOSIsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwifQ.e1et2pBR16njBspP5KTD0f-ysq_YPRi_qIzTkrHMwoz69jhtCEHufZK7muA0PFPIKn7OKyf1T7KJaUwv_7Y1Jadddwlf5GGeLdonU1CAGIhBfHdLqovBiCG8DP6odv_Y71oq9XkMtmDBXJwyWl5HCMmLK0x9LBLk32P2qeTyJubg_gr4Kyw32MKbqbvQNAjZhx6iAu5MdngmitA3QR55E4H0GIiFLI7myrTDv4cht-xE_q0j4JA29U7I5m63Fr9yQrp-omli3jfYFMwGDo3xiS5PxEPKn3FUDonWGJdisAw3YXm9G6cm3WFO2YWQh32x4YAHW2FZZFQu4c8TRVoMjQ",
+				"type": "string"
+			},
+			{
+				"key": "tokenName",
+				"value": "ayah",
+				"type": "string"
+			},
+			{
+				"key": "redirect_uri",
+				"value": "http://localhost:3000/callback",
+				"type": "string"
+			},
+			{
+				"key": "useBrowser",
+				"value": false,
+				"type": "boolean"
+			},
+			{
+				"key": "client_authentication",
+				"value": "body",
+				"type": "string"
+			},
+			{
+				"key": "state",
+				"value": "qjhwgfqjhwfqhfoiqfjoiqjo",
+				"type": "string"
+			},
+			{
+				"key": "clientSecret",
+				"value": "{{auth0_client_secret}}",
+				"type": "string"
+			},
+			{
+				"key": "scope",
+				"value": "openid profile email",
+				"type": "string"
+			},
+			{
+				"key": "clientId",
+				"value": "{{auth0_client_id}}",
+				"type": "string"
+			},
+			{
+				"key": "accessTokenUrl",
+				"value": "https://{{auth0_domain}}/oauth/token",
+				"type": "string"
+			},
+			{
+				"key": "authUrl",
+				"value": "https://{{auth0_domain}}/authorize?audience={{auth0_audience}}",
+				"type": "string"
+			},
+			{
+				"key": "addTokenTo",
+				"value": "header",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "2e83c0fe-6650-44d5-a90f-4c27ff720d83",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -234,7 +446,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "977c227e-2df3-42eb-9a48-ec25e2f7eeae",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -244,16 +455,40 @@
 	],
 	"variable": [
 		{
-			"id": "bf208e6b-f66d-4008-9366-dd541ff65425",
 			"key": "apiId",
-			"value": "",
-			"type": "string"
+			"value": "j2s9w35fv3"
 		},
 		{
-			"id": "9bc6399a-d2bb-4f2d-9ffa-8480370d383c",
 			"key": "authToken",
-			"value": "",
-			"type": "string"
+			"value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA"
+		},
+		{
+			"key": "postId",
+			"value": ""
+		},
+		{
+			"key": "commentId",
+			"value": ""
+		},
+		{
+			"key": "domain",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "auth0_domain",
+			"value": ""
+		},
+		{
+			"key": "auth0_client_id",
+			"value": ""
+		},
+		{
+			"key": "auth0_client_secret",
+			"value": ""
+		},
+		{
+			"key": "auth0_audience",
+			"value": ""
 		}
 	]
 }
